@@ -186,6 +186,30 @@
   }
   .estimate.pending{color:var(--ink-soft); font-weight:500;}
   .estimate.overdue{color:var(--green);}
+  .waiting-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:6px;
+  }
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--amber);
+    animation:pulse 1.4s ease-in-out infinite;
+    flex-shrink:0;
+  }
+  @media (prefers-reduced-motion: reduce){ .dot{animation:none;} }
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:0.35;}
+  }
+  .elapsed{
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    font-variant-numeric:tabular-nums;
+    color:var(--amber);
+  }
 
   .sync-status{
     text-align:center;
@@ -324,20 +348,13 @@ function recentAvgForType(type){
   return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
 }
 
-// Done = cart dispatched, not arrived — add average travel time to get a real ETA
-const TRAVEL_MS = 5 * 60 * 1000;
-function avgWaitForType(type){
-  const avg = recentAvgForType(type);
-  return avg === null ? null : avg + TRAVEL_MS;
-}
-
 function formatEstimate(remainingMs){
   if(remainingMs <= 0) return '⏱ Should arrive any moment';
   return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
 }
 
 function estimateHtml(r){
-  const avg = avgWaitForType(r.type||'Other');
+  const avg = recentAvgForType(r.type||'Other');
   if(avg === null){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
@@ -357,6 +374,10 @@ function render(){
         <span class="loc">${escapeHtml(r.location)}</span>
         ${tagHtml(r.type)}
         ${estimateHtml(r)}
+        <div class="waiting-row">
+          <span class="dot"></span>
+          <span class="elapsed" id="elapsed-${r.id}">Waiting ${fmtDuration(Date.now()-r.requestedAt)}</span>
+        </div>
       </div>
     </div>
   `).join('') : '<div class="empty">No pending requests right now.</div>';
@@ -364,9 +385,12 @@ function render(){
 
 function tickEstimates(){
   requests.filter(r=>!r.completedAt).forEach(r=>{
+    const elapsedEl = document.getElementById('elapsed-'+r.id);
+    if(elapsedEl) elapsedEl.textContent = 'Waiting ' + fmtDuration(Date.now()-r.requestedAt);
+
     const estEl = document.getElementById('estimate-'+r.id);
     if(!estEl) return;
-    const avg = avgWaitForType(r.type||'Other');
+    const avg = recentAvgForType(r.type||'Other');
     if(avg === null){
       estEl.textContent = '⏱ Est. wait: gathering data';
       estEl.classList.remove('overdue');
