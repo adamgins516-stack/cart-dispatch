@@ -48,10 +48,31 @@
     font-weight:600;
   }
   header{
+    position:relative;
     padding:20px 18px 14px;
     border-bottom:2px solid var(--line);
     background:var(--bg);
   }
+  .notify-btn{
+    position:absolute;
+    top:18px;
+    right:18px;
+    width:40px;
+    height:40px;
+    padding:0;
+    border-radius:999px;
+    border:2px solid var(--line);
+    background:var(--card);
+    color:var(--ink-soft);
+    font-size:18px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .notify-btn.on{border-color:var(--green); background:var(--green-soft); color:var(--green);}
+  .notify-btn.denied{border-color:var(--red); background:#F8D7DA; color:var(--red);}
   h1{
     font-family:'Big Shoulders',sans-serif;
     font-weight:800;
@@ -452,6 +473,7 @@
 <div id="app" style="display:none;">
 
 <header>
+  <button type="button" class="notify-btn off" id="notify-btn" title="Turn on notifications for new requests">🔔</button>
   <h1>Cart Dispatch</h1>
   <div class="subtitle">Visiting Day</div>
   <div class="stats">
@@ -756,10 +778,84 @@ function tickElapsed(){
   });
 }
 
+// ---- New-request notifications ----
+const NOTIFY_MUTE_KEY = 'notifyMuted';
+const isMuted = () => { try{ return localStorage.getItem(NOTIFY_MUTE_KEY) === '1'; }catch(e){ return false; } };
+const setMuted = v => { try{ localStorage.setItem(NOTIFY_MUTE_KEY, v ? '1' : '0'); }catch(e){} };
+const notifySupported = 'Notification' in window;
+const notifyActive = () => notifySupported && Notification.permission === 'granted' && !isMuted();
+
+function updateNotifyBtn(){
+  const btn = document.getElementById('notify-btn');
+  if(!notifySupported){ btn.style.display = 'none'; return; }
+  btn.classList.remove('on','off','denied');
+  if(Notification.permission === 'denied'){
+    btn.classList.add('denied');
+    btn.textContent = '🔕';
+    btn.title = 'Notifications blocked — enable them in your browser/site settings';
+  }else if(notifyActive()){
+    btn.classList.add('on');
+    btn.textContent = '🔔';
+    btn.title = 'Notifications on for new requests — tap to mute';
+  }else{
+    btn.classList.add('off');
+    btn.textContent = '🔕';
+    btn.title = Notification.permission === 'granted'
+      ? 'Notifications muted — tap to unmute'
+      : 'Tap to turn on notifications for new requests';
+  }
+}
+
+document.getElementById('notify-btn').addEventListener('click', ()=>{
+  if(!notifySupported || Notification.permission === 'denied'){ updateNotifyBtn(); return; }
+  if(Notification.permission === 'granted'){
+    setMuted(!isMuted());
+  }else{
+    Notification.requestPermission().then(()=>updateNotifyBtn());
+    return;
+  }
+  updateNotifyBtn();
+});
+updateNotifyBtn();
+
+function playChime(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880,0],[660,0.15]].forEach(([freq,delay])=>{
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      const t = ctx.currentTime + delay;
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t);
+      o.stop(t + 0.3);
+    });
+  }catch(e){}
+}
+
+function notifyNewRequest(r){
+  if(!notifyActive()) return;
+  try{
+    new Notification('New cart request', {
+      body: `${TYPE_ICONS[r.type||'Other']||''} ${r.location} — ${r.type||'Other'}`,
+      tag: 'cart-request-'+r.id
+    });
+  }catch(e){}
+  playChime();
+}
+
 // ---- Firebase live sync ----
+let knownRequestIds = null;
 onValue(ref(db, 'requests'), snap=>{
   const val = snap.val();
   requests = val ? Object.keys(val).map(id=>({id, ...val[id]})) : [];
+  if(knownRequestIds !== null){
+    requests.forEach(r=>{
+      if(!knownRequestIds.has(r.id)) notifyNewRequest(r);
+    });
+  }
+  knownRequestIds = new Set(requests.map(r=>r.id));
   render();
 }, err=>showError('Lost connection to requests: '+err.message));
 
