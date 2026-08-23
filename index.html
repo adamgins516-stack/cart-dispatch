@@ -451,7 +451,7 @@ function recentAvgForType(type){
 }
 
 // Done = cart dispatched, not arrived — add average travel time to get a real ETA
-const TRAVEL_MS = 10 * 60 * 1000;
+const TRAVEL_MS = 5 * 60 * 1000;
 function avgWaitForType(type){
   const avg = recentAvgForType(type);
   return avg === null ? null : avg + TRAVEL_MS;
