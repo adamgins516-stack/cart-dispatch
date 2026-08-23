@@ -393,6 +393,11 @@ try{
 
 const TYPE_ICONS = {Luggage:'🧳', People:'🧑\u200d🤝\u200d🧑'};
 
+// People get served before luggage-only requests
+function typeSortWeight(type){
+  return type === 'People' ? 0 : 1;
+}
+
 let requests = [];
 let logType = 'People';
 
@@ -452,23 +457,34 @@ function avgWaitForType(type){
   return avg === null ? null : avg + TRAVEL_MS;
 }
 
+// People are served first, so luggage has to wait out everyone ahead of it in the people line
+function peopleQueueDelayMs(){
+  const peopleAvg = avgWaitForType('People');
+  if(peopleAvg === null) return 0;
+  return requests
+    .filter(r=>!r.completedAt && (r.type||'Other')==='People')
+    .reduce((sum,r)=>sum + Math.max(0, peopleAvg - (Date.now()-r.requestedAt)), 0);
+}
+
 function formatEstimate(remainingMs){
   if(remainingMs <= 0) return '⏱ Should arrive any moment';
   return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
 }
 
 function estimateHtml(r){
-  const avg = avgWaitForType(r.type||'Other');
+  const type = r.type||'Other';
+  const avg = avgWaitForType(type);
   if(avg === null){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
-  const remaining = avg - (Date.now()-r.requestedAt);
+  const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
+  const remaining = avg + extra - (Date.now()-r.requestedAt);
   const cls = remaining <= 0 ? 'estimate overdue' : 'estimate';
   return `<div class="${cls}" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
 }
 
 function render(){
-  const active = requests.filter(r=>!r.completedAt).sort((a,b)=>a.requestedAt-b.requestedAt);
+  const active = requests.filter(r=>!r.completedAt).sort((a,b)=>typeSortWeight(a.type)-typeSortWeight(b.type) || a.requestedAt-b.requestedAt);
   document.getElementById('waiting-num').textContent = active.length;
 
   const activeList = document.getElementById('active-list');
@@ -498,13 +514,15 @@ function tickEstimates(){
 
     const estEl = document.getElementById('estimate-'+r.id);
     if(!estEl) return;
-    const avg = avgWaitForType(r.type||'Other');
+    const type = r.type||'Other';
+    const avg = avgWaitForType(type);
     if(avg === null){
       estEl.textContent = '⏱ Est. wait: gathering data';
       estEl.classList.remove('overdue');
       estEl.classList.add('pending');
     }else{
-      const remaining = avg - (Date.now()-r.requestedAt);
+      const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
+      const remaining = avg + extra - (Date.now()-r.requestedAt);
       estEl.textContent = formatEstimate(remaining);
       estEl.classList.remove('pending');
       estEl.classList.toggle('overdue', remaining <= 0);
