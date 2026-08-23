@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Request a Cart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF1E4;
+    --card:#FFFFFF;
+    --ink:#1C2B20;
+    --ink-soft:#5B6B5D;
+    --line:#DBE0CD;
+    --amber:#C97F16;
+    --amber-soft:#F6E9CC;
+    --green:#2F6B4F;
+    --green-soft:#DEEAE1;
+    --red:#A93A2E;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  header, .add-bar, main, .sync-status, .error-banner, .notice-banner{
+    max-width:640px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .error-banner, .notice-banner{
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:12px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .error-banner{ background:#F8D7DA; color:#842029; border:2px solid #F1AEB5; }
+  .notice-banner{ background:var(--amber-soft); color:#8a5a10; border:2px solid #EAD9AC; }
+
+  header{
+    padding:20px 18px 14px;
+    border-bottom:2px solid var(--line);
+    background:var(--bg);
+  }
+  h1{
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:28px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    margin:0;
+    line-height:1;
+  }
+  .subtitle{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:4px;
+    font-weight:500;
+  }
+  .waiting-count{
+    margin-top:12px;
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+  .waiting-count strong{ color:var(--ink); font-size:20px; }
+
+  .add-bar{
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .add-row{display:flex; gap:8px;}
+  .add-bar input{
+    flex:1;
+    min-width:0;
+    font-size:16px;
+    padding:15px 14px;
+    border-radius:var(--radius);
+    border:2px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+  }
+  .add-bar input:focus{outline:3px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
+  .add-row button{
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    background:var(--green);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    padding:0 22px;
+    cursor:pointer;
+  }
+  .add-row button:active{transform:scale(0.97);}
+
+  .type-row{display:flex; gap:8px;}
+  .type-chip{
+    flex:1;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:12px 6px;
+    border-radius:10px;
+    border:2px solid var(--line);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .type-chip.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .type-chip:active{transform:scale(0.97);}
+
+  main{padding:6px 18px 0;}
+
+  .section-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin:18px 0 8px;
+  }
+
+  .empty{
+    color:var(--ink-soft);
+    font-size:14px;
+    padding:18px 4px;
+    text-align:center;
+    border:2px dashed var(--line);
+    border-radius:var(--radius);
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    border:2px solid var(--line);
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .loc{
+    font-weight:700;
+    font-size:15px;
+    overflow-wrap:anywhere;
+  }
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+  .tag-luggage{background:var(--amber-soft); color:#8a5a10;}
+  .tag-people{background:var(--green-soft); color:var(--green);}
+
+  .sync-status{
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-soft);
+    padding:6px 18px 0;
+  }
+  button:focus-visible, input:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  @media (hover:hover) and (pointer:fine){
+    .add-row button:hover{ opacity:0.88; }
+    .type-chip:hover{ border-color:var(--amber); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Request a Cart</h1>
+  <div class="subtitle">Visiting Day — Staff</div>
+  <div class="waiting-count"><strong id="waiting-num">0</strong> carts currently waiting</div>
+</header>
+
+<div class="error-banner" id="error-banner" style="display:none;"></div>
+<div class="notice-banner" id="notice-banner" style="display:none;"></div>
+
+<form class="add-bar" id="add-form">
+  <div class="type-row" id="type-row">
+    <button type="button" class="type-chip" data-type="Luggage">🧳 Luggage</button>
+    <button type="button" class="type-chip" data-type="People">🧑‍🤝‍🧑 People</button>
+  </div>
+  <div class="add-row">
+    <input id="location-input" type="text" placeholder="Location (e.g. Cabin 12)" autocomplete="off" required>
+    <button type="submit">Request</button>
+  </div>
+</form>
+
+<main>
+  <div class="section-label">Currently on the list</div>
+  <div id="active-list"></div>
+</main>
+
+<div class="sync-status" id="sync-status">Connecting…</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import {
+  getDatabase, ref, push, set, onValue
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+// ====== SAME FIREBASE PROJECT AS index.html — keep these identical ======
+const firebaseConfig = {
+  apiKey: "AIzaSyCiGLztuyGjXunjPIwurGxc5A8ESC-Xhc0",
+  authDomain: "golf-cart-dispatch.firebaseapp.com",
+  databaseURL: "https://golf-cart-dispatch-default-rtdb.firebaseio.com",
+  projectId: "golf-cart-dispatch",
+  storageBucket: "golf-cart-dispatch.firebasestorage.app",
+  messagingSenderId: "512571560244",
+  appId: "1:512571560244:web:5b80852b750f253b3bd561"
+};
+// ==========================================================================
+
+let app, db;
+function showError(msg){
+  const el = document.getElementById('error-banner');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+  clearTimeout(showError._t);
+  showError._t = setTimeout(()=>{ el.style.display='none'; }, 8000);
+}
+function showNotice(msg){
+  const el = document.getElementById('notice-banner');
+  el.textContent = 'ℹ️ ' + msg;
+  el.style.display = 'block';
+  clearTimeout(showNotice._t);
+  showNotice._t = setTimeout(()=>{ el.style.display='none'; }, 6000);
+}
+try{
+  app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+}catch(err){
+  showError('Firebase failed to start: ' + err.message);
+}
+
+const TYPE_ICONS = {Luggage:'🧳', People:'🧑\u200d🤝\u200d🧑'};
+
+let requests = [];
+let logType = 'People';
+
+function setActiveChip(){
+  document.querySelectorAll('.type-chip').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.type === logType);
+  });
+}
+document.querySelectorAll('.type-chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    logType = btn.dataset.type;
+    setActiveChip();
+  });
+});
+setActiveChip();
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function tagHtml(type){
+  const t = type || 'People';
+  const cls = 'tag-' + t.toLowerCase();
+  return `<span class="tag ${cls}">${TYPE_ICONS[t] || ''} ${t}</span>`;
+}
+
+function render(){
+  const active = requests.filter(r=>!r.completedAt).sort((a,b)=>a.requestedAt-b.requestedAt);
+  document.getElementById('waiting-num').textContent = active.length;
+
+  const activeList = document.getElementById('active-list');
+  activeList.innerHTML = active.length ? active.map(r=>`
+    <div class="card">
+      <span class="loc">${escapeHtml(r.location)}</span>
+      ${tagHtml(r.type)}
+    </div>
+  `).join('') : '<div class="empty">No pending requests right now.</div>';
+}
+
+onValue(ref(db, 'requests'), snap=>{
+  const val = snap.val();
+  requests = val ? Object.keys(val).map(id=>({id, ...val[id]})) : [];
+  render();
+}, err=>showError('Lost connection: '+err.message));
+
+onValue(ref(db, '.info/connected'), snap=>{
+  const connected = snap.val();
+  document.getElementById('sync-status').textContent = connected
+    ? '🟢 Connected'
+    : '🔴 Offline — reconnecting…';
+});
+
+document.getElementById('add-form').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const input = document.getElementById('location-input');
+  const loc = input.value.trim();
+  if(!loc) return;
+  if(!db){ showError('Not connected — try again in a moment.'); return; }
+
+  const dup = requests.find(r=>!r.completedAt && r.location.trim().toLowerCase()===loc.toLowerCase());
+  if(dup){
+    showNotice(`"${loc}" is already on the list — no need to request again.`);
+    return;
+  }
+
+  const newRef = push(ref(db,'requests'));
+  set(newRef, {location:loc, type:logType, requestedAt:Date.now(), completedAt:null})
+    .then(()=>{ input.value=''; input.focus(); })
+    .catch(err=>showError('Could not send request: '+err.message));
+});
+</script>
+</body>
+</html>
