@@ -215,6 +215,36 @@
     gap:10px;
   }
   .card.completed{opacity:0.72;}
+  .card.removal-pending{border-color:var(--red);}
+
+  .removal-request{
+    margin-top:8px;
+    padding:10px 12px;
+    background:#F8D7DA;
+    border:2px solid #F1AEB5;
+    border-radius:10px;
+  }
+  .removal-reason{
+    font-size:12px;
+    font-weight:600;
+    color:#842029;
+  }
+  .removal-actions{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .removal-actions button{
+    flex:1;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    padding:8px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .approve-btn{ background:var(--red); color:#fff; border:none; }
+  .deny-btn{ background:var(--card); color:var(--ink); border:2px solid var(--line); }
 
   .card-main{flex:1; min-width:0;}
   .loc{
@@ -607,7 +637,7 @@ function render(){
 
   const activeList = document.getElementById('active-list');
   activeList.innerHTML = active.length ? active.map(r=>`
-    <div class="card" data-id="${r.id}">
+    <div class="card ${r.removalRequested ? 'removal-pending' : ''}" data-id="${r.id}">
       <div class="card-main">
         <div class="loc">${escapeHtml(r.location)}</div>
         ${tagHtml(r.type)}
@@ -617,6 +647,15 @@ function render(){
           <span class="dot"></span>
           <span class="elapsed" id="elapsed-${r.id}">${fmtDuration(Date.now()-r.requestedAt)}</span>
         </div>
+        ${r.removalRequested ? `
+          <div class="removal-request">
+            <div class="removal-reason">⚠️ Staff requested removal: "${escapeHtml(r.removalReason||'')}"</div>
+            <div class="removal-actions">
+              <button class="approve-btn" onclick="deleteRequest('${r.id}')">Approve removal</button>
+              <button class="deny-btn" onclick="denyRemoval('${r.id}')">Deny</button>
+            </div>
+          </div>
+        ` : ''}
       </div>
       <button class="btn-complete" onclick="markComplete('${r.id}')">Done</button>
       <button class="icon-btn" title="Delete" onclick="deleteRequest('${r.id}')">✕</button>
@@ -691,11 +730,17 @@ function undoComplete(id){
   update(ref(db,'requests/'+id), {completedAt: null}).catch(err=>showError('Could not save: '+err.message));
 }
 function deleteRequest(id){
+  if(!confirm('Delete this request permanently? This cannot be undone.')) return;
   remove(ref(db,'requests/'+id)).catch(err=>showError('Could not delete: '+err.message));
+}
+function denyRemoval(id){
+  update(ref(db,'requests/'+id), {removalRequested:null, removalReason:null, removalRequestedAt:null})
+    .catch(err=>showError('Could not save: '+err.message));
 }
 window.markComplete = markComplete;
 window.undoComplete = undoComplete;
 window.deleteRequest = deleteRequest;
+window.denyRemoval = denyRemoval;
 
 document.getElementById('add-form').addEventListener('submit', (e)=>{
   e.preventDefault();

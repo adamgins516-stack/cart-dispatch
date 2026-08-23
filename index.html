@@ -211,6 +211,91 @@
     color:var(--amber);
   }
 
+  .remove-btn{
+    margin-top:10px;
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    padding:9px;
+    border-radius:8px;
+    border:2px solid var(--line);
+    background:var(--card);
+    color:var(--red);
+    cursor:pointer;
+  }
+  .removal-pending-note{
+    margin-top:10px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:9px;
+    border-radius:8px;
+    background:var(--bg);
+  }
+
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:rgba(28,43,32,0.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .modal-card{
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px;
+    max-width:360px;
+    width:100%;
+  }
+  .modal-card h3{
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:18px;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    margin:0 0 4px;
+  }
+  .modal-card .modal-sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  .modal-card textarea{
+    width:100%;
+    font-size:15px;
+    padding:12px;
+    border-radius:10px;
+    border:2px solid var(--line);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    resize:vertical;
+    min-height:70px;
+  }
+  .modal-card textarea:focus{outline:3px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .modal-actions button{
+    flex:1;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:12px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .modal-cancel{ background:var(--card); color:var(--ink); border:2px solid var(--line); }
+  .modal-submit{ background:var(--red); color:#fff; border:none; }
+
   .sync-status{
     text-align:center;
     font-size:11px;
@@ -254,10 +339,22 @@
 
 <div class="sync-status" id="sync-status">Connecting…</div>
 
+<div class="modal-overlay" id="remove-modal">
+  <form class="modal-card" id="remove-form">
+    <h3>Remove request?</h3>
+    <div class="modal-sub">Let the dispatcher know why — they'll approve or deny it.</div>
+    <textarea id="remove-reason" placeholder="e.g. Requested by mistake, no longer needed" required></textarea>
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="remove-cancel">Cancel</button>
+      <button type="submit" class="modal-submit">Send request</button>
+    </div>
+  </form>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
-  getDatabase, ref, push, set, onValue
+  getDatabase, ref, push, set, update, onValue
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
 // ====== SAME FIREBASE PROJECT AS index.html — keep these identical ======
@@ -378,6 +475,10 @@ function render(){
           <span class="dot"></span>
           <span class="elapsed" id="elapsed-${r.id}">Waiting ${fmtDuration(Date.now()-r.requestedAt)}</span>
         </div>
+        ${r.removalRequested
+          ? `<div class="removal-pending-note">Removal requested — waiting on dispatcher</div>`
+          : `<button type="button" class="remove-btn" onclick="requestRemoval('${r.id}')">Remove</button>`
+        }
       </div>
     </div>
   `).join('') : '<div class="empty">No pending requests right now.</div>';
@@ -434,6 +535,37 @@ document.getElementById('add-form').addEventListener('submit', (e)=>{
   set(newRef, {location:loc, type:logType, requestedAt:Date.now(), completedAt:null})
     .then(()=>{ input.value=''; input.focus(); })
     .catch(err=>showError('Could not send request: '+err.message));
+});
+
+let removeTargetId = null;
+function openRemoveModal(id){
+  removeTargetId = id;
+  document.getElementById('remove-reason').value = '';
+  document.getElementById('remove-modal').style.display = 'flex';
+  document.getElementById('remove-reason').focus();
+}
+function closeRemoveModal(){
+  document.getElementById('remove-modal').style.display = 'none';
+  removeTargetId = null;
+}
+window.requestRemoval = openRemoveModal;
+
+document.getElementById('remove-cancel').addEventListener('click', closeRemoveModal);
+document.getElementById('remove-modal').addEventListener('click', (e)=>{
+  if(e.target.id === 'remove-modal') closeRemoveModal();
+});
+document.getElementById('remove-form').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const reason = document.getElementById('remove-reason').value.trim();
+  if(!reason || !removeTargetId) return;
+  if(!db){ showError('Not connected — try again in a moment.'); return; }
+  update(ref(db,'requests/'+removeTargetId), {
+    removalRequested: true,
+    removalReason: reason,
+    removalRequestedAt: Date.now()
+  })
+    .then(closeRemoveModal)
+    .catch(err=>showError('Could not send removal request: '+err.message));
 });
 
 setInterval(tickEstimates, 1000);
