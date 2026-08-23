@@ -185,7 +185,6 @@
     margin-top:4px;
   }
   .estimate.pending{color:var(--ink-soft); font-weight:500;}
-  .estimate.overdue{color:var(--green);}
   .waiting-row{
     display:flex;
     align-items:center;
@@ -466,8 +465,12 @@ function peopleQueueDelayMs(){
     .reduce((sum,r)=>sum + Math.max(0, peopleAvg - (Date.now()-r.requestedAt)), 0);
 }
 
+// Wait times keep running long — never let the countdown bottom out or claim arrival
+function clampRemaining(ms){
+  return Math.max(ms, TRAVEL_MS);
+}
+
 function formatEstimate(remainingMs){
-  if(remainingMs <= 0) return '⏱ Should arrive any moment';
   return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
 }
 
@@ -478,9 +481,8 @@ function estimateHtml(r){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
   const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
-  const remaining = avg + extra - (Date.now()-r.requestedAt);
-  const cls = remaining <= 0 ? 'estimate overdue' : 'estimate';
-  return `<div class="${cls}" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
+  const remaining = clampRemaining(avg + extra - (Date.now()-r.requestedAt));
+  return `<div class="estimate" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
 }
 
 function render(){
@@ -518,14 +520,12 @@ function tickEstimates(){
     const avg = avgWaitForType(type);
     if(avg === null){
       estEl.textContent = '⏱ Est. wait: gathering data';
-      estEl.classList.remove('overdue');
       estEl.classList.add('pending');
     }else{
       const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
-      const remaining = avg + extra - (Date.now()-r.requestedAt);
+      const remaining = clampRemaining(avg + extra - (Date.now()-r.requestedAt));
       estEl.textContent = formatEstimate(remaining);
       estEl.classList.remove('pending');
-      estEl.classList.toggle('overdue', remaining <= 0);
     }
   });
 }
