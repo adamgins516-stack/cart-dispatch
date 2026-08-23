@@ -476,13 +476,20 @@ function recentAvgForType(type){
   return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
 }
 
+// Done = cart dispatched, not arrived — add average travel time (3-7 min range) to get a real ETA
+const TRAVEL_MS = 5 * 60 * 1000;
+function avgWaitForType(type){
+  const avg = recentAvgForType(type);
+  return avg === null ? null : avg + TRAVEL_MS;
+}
+
 function formatEstimate(remainingMs){
   if(remainingMs <= 0) return '⏱ Should arrive any moment';
   return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
 }
 
 function estimateHtml(r){
-  const avg = recentAvgForType(r.type||'Other');
+  const avg = avgWaitForType(r.type||'Other');
   if(avg === null){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
@@ -493,7 +500,7 @@ function estimateHtml(r){
 
 function updatePreviewEta(){
   const el = document.getElementById('preview-eta');
-  const avg = recentAvgForType(logType);
+  const avg = avgWaitForType(logType);
   const icon = TYPE_ICONS[logType] || '';
   if(avg === null){
     el.textContent = `${icon} No ${logType} data yet — ETA appears after a few completions`;
@@ -559,7 +566,7 @@ function tickElapsed(){
 
     const estEl = document.getElementById('estimate-'+r.id);
     if(estEl){
-      const avg = recentAvgForType(r.type||'Other');
+      const avg = avgWaitForType(r.type||'Other');
       if(avg === null){
         estEl.textContent = '⏱ Est. wait: gathering data';
         estEl.classList.remove('overdue');

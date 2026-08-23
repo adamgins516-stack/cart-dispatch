@@ -316,13 +316,20 @@ function recentAvgForType(type){
   return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
 }
 
+// Done = cart dispatched, not arrived — add average travel time (3-7 min range) to get a real ETA
+const TRAVEL_MS = 5 * 60 * 1000;
+function avgWaitForType(type){
+  const avg = recentAvgForType(type);
+  return avg === null ? null : avg + TRAVEL_MS;
+}
+
 function formatEstimate(remainingMs){
   if(remainingMs <= 0) return '⏱ Should arrive any moment';
   return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
 }
 
 function estimateHtml(r){
-  const avg = recentAvgForType(r.type||'Other');
+  const avg = avgWaitForType(r.type||'Other');
   if(avg === null){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
@@ -351,7 +358,7 @@ function tickEstimates(){
   requests.filter(r=>!r.completedAt).forEach(r=>{
     const estEl = document.getElementById('estimate-'+r.id);
     if(!estEl) return;
-    const avg = recentAvgForType(r.type||'Other');
+    const avg = avgWaitForType(r.type||'Other');
     if(avg === null){
       estEl.textContent = '⏱ Est. wait: gathering data';
       estEl.classList.remove('overdue');
