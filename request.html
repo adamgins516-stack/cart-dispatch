@@ -177,6 +177,16 @@
   .tag-luggage{background:var(--amber-soft); color:#8a5a10;}
   .tag-people{background:var(--green-soft); color:var(--green);}
 
+  .card-main{flex:1; min-width:0;}
+  .estimate{
+    font-size:12px;
+    font-weight:700;
+    color:var(--amber);
+    margin-top:4px;
+  }
+  .estimate.pending{color:var(--ink-soft); font-weight:500;}
+  .estimate.overdue{color:var(--green);}
+
   .sync-status{
     text-align:center;
     font-size:11px;
@@ -290,17 +300,69 @@ function tagHtml(type){
   return `<span class="tag ${cls}">${TYPE_ICONS[t] || ''} ${t}</span>`;
 }
 
+function fmtDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const m = Math.floor(totalSec/60);
+  const s = totalSec%60;
+  return m + 'm ' + String(s).padStart(2,'0') + 's';
+}
+
+function recentAvgForType(type){
+  const matches = requests
+    .filter(r=>r.completedAt && (r.type||'Other')===type)
+    .sort((a,b)=>b.completedAt-a.completedAt)
+    .slice(0,5);
+  if(!matches.length) return null;
+  return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
+}
+
+function formatEstimate(remainingMs){
+  if(remainingMs <= 0) return '⏱ Should arrive any moment';
+  return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
+}
+
+function estimateHtml(r){
+  const avg = recentAvgForType(r.type||'Other');
+  if(avg === null){
+    return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
+  }
+  const remaining = avg - (Date.now()-r.requestedAt);
+  const cls = remaining <= 0 ? 'estimate overdue' : 'estimate';
+  return `<div class="${cls}" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
+}
+
 function render(){
   const active = requests.filter(r=>!r.completedAt).sort((a,b)=>a.requestedAt-b.requestedAt);
   document.getElementById('waiting-num').textContent = active.length;
 
   const activeList = document.getElementById('active-list');
   activeList.innerHTML = active.length ? active.map(r=>`
-    <div class="card">
-      <span class="loc">${escapeHtml(r.location)}</span>
-      ${tagHtml(r.type)}
+    <div class="card" data-id="${r.id}">
+      <div class="card-main">
+        <span class="loc">${escapeHtml(r.location)}</span>
+        ${tagHtml(r.type)}
+        ${estimateHtml(r)}
+      </div>
     </div>
   `).join('') : '<div class="empty">No pending requests right now.</div>';
+}
+
+function tickEstimates(){
+  requests.filter(r=>!r.completedAt).forEach(r=>{
+    const estEl = document.getElementById('estimate-'+r.id);
+    if(!estEl) return;
+    const avg = recentAvgForType(r.type||'Other');
+    if(avg === null){
+      estEl.textContent = '⏱ Est. wait: gathering data';
+      estEl.classList.remove('overdue');
+      estEl.classList.add('pending');
+    }else{
+      const remaining = avg - (Date.now()-r.requestedAt);
+      estEl.textContent = formatEstimate(remaining);
+      estEl.classList.remove('pending');
+      estEl.classList.toggle('overdue', remaining <= 0);
+    }
+  });
 }
 
 onValue(ref(db, 'requests'), snap=>{
@@ -334,6 +396,8 @@ document.getElementById('add-form').addEventListener('submit', (e)=>{
     .then(()=>{ input.value=''; input.focus(); })
     .catch(err=>showError('Could not send request: '+err.message));
 });
+
+setInterval(tickEstimates, 1000);
 </script>
 </body>
 </html>
