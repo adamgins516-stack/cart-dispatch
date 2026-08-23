@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Cart Dispatch</title>
+<title>Request a Cart</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -29,24 +29,21 @@
     min-height:100vh;
     padding-bottom:40px;
   }
-  /* Keeps the layout a comfortable, centered column on laptop/desktop
-     while staying identical (full-width) on phone/iPad screens. */
-  header, .add-bar, main, footer, .sync-status, .error-banner{
+  header, .add-bar, main, .sync-status, .error-banner, .notice-banner{
     max-width:640px;
     margin-left:auto;
     margin-right:auto;
   }
-  .error-banner{
-    background:#F8D7DA;
-    color:#842029;
-    border:2px solid #F1AEB5;
+  .error-banner, .notice-banner{
     border-radius:10px;
     padding:10px 14px;
     margin-top:12px;
-    margin-bottom:0;
     font-size:13px;
     font-weight:600;
   }
+  .error-banner{ background:#F8D7DA; color:#842029; border:2px solid #F1AEB5; }
+  .notice-banner{ background:var(--amber-soft); color:#8a5a10; border:2px solid #EAD9AC; }
+
   header{
     padding:20px 18px 14px;
     border-bottom:2px solid var(--line);
@@ -55,7 +52,7 @@
   h1{
     font-family:'Big Shoulders',sans-serif;
     font-weight:800;
-    font-size:30px;
+    font-size:28px;
     letter-spacing:0.02em;
     text-transform:uppercase;
     margin:0;
@@ -67,37 +64,27 @@
     margin-top:4px;
     font-weight:500;
   }
-  .stats{
-    display:flex;
-    gap:16px;
+  .waiting-count{
     margin-top:12px;
     font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    color:var(--ink-soft);
   }
-  .stat{
-    display:flex;
-    flex-direction:column;
-    line-height:1;
-  }
-  .stat .num{font-size:22px; font-weight:800;}
-  .stat .label{font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); font-family:'Inter',sans-serif; font-weight:600; margin-top:2px;}
+  .waiting-count strong{ color:var(--ink); font-size:20px; }
 
   .add-bar{
-    position:sticky;
-    top:0;
-    z-index:10;
+    padding:16px 18px;
     display:flex;
     flex-direction:column;
-    gap:8px;
-    padding:12px 18px;
-    background:var(--bg);
-    border-bottom:2px solid var(--line);
+    gap:10px;
   }
   .add-row{display:flex; gap:8px;}
   .add-bar input{
     flex:1;
     min-width:0;
     font-size:16px;
-    padding:14px 14px;
+    padding:15px 14px;
     border-radius:var(--radius);
     border:2px solid var(--line);
     background:var(--card);
@@ -112,24 +99,22 @@
     font-size:16px;
     text-transform:uppercase;
     letter-spacing:0.03em;
-    background:var(--ink);
+    background:var(--green);
     color:#fff;
     border:none;
     border-radius:var(--radius);
-    padding:0 20px;
+    padding:0 22px;
     cursor:pointer;
   }
   .add-row button:active{transform:scale(0.97);}
 
-  .type-row{display:flex; gap:6px;}
+  .type-row{display:flex; gap:8px;}
   .type-chip{
     flex:1;
     font-family:'Inter',sans-serif;
     font-weight:600;
-    font-size:12px;
-    text-transform:none;
-    letter-spacing:normal;
-    padding:9px 4px;
+    font-size:14px;
+    padding:12px 6px;
     border-radius:10px;
     border:2px solid var(--line);
     background:var(--card);
@@ -143,48 +128,7 @@
   }
   .type-chip:active{transform:scale(0.97);}
 
-  .preview-eta{
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:15px;
-    letter-spacing:0.01em;
-    color:#8a5a10;
-    background:var(--amber-soft);
-    text-align:center;
-    padding:8px 6px;
-    border-radius:10px;
-  }
-  .preview-eta.pending{
-    background:var(--line);
-    color:var(--ink-soft);
-    font-weight:600;
-    font-size:13px;
-  }
-
-  .tag{
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-    font-size:12px;
-    font-weight:700;
-    padding:3px 10px;
-    border-radius:20px;
-    margin-top:5px;
-  }
-  .tag-luggage{background:var(--amber-soft); color:#8a5a10;}
-  .tag-people{background:var(--green-soft); color:var(--green);}
-  .tag-other{background:var(--line); color:var(--ink-soft);}
-
-  .estimate{
-    font-size:12px;
-    font-weight:700;
-    color:var(--amber);
-    margin-top:3px;
-  }
-  .estimate.pending{color:var(--ink-soft); font-weight:500;}
-  .estimate.overdue{color:var(--green);}
-
-  main{padding:16px 18px 0;}
+  main{padding:6px 18px 0;}
 
   .section-label{
     font-size:11px;
@@ -208,130 +152,41 @@
     background:var(--card);
     border-radius:var(--radius);
     border:2px solid var(--line);
-    padding:12px 14px;
+    padding:14px 16px;
     margin-bottom:10px;
     display:flex;
     align-items:center;
+    justify-content:space-between;
     gap:10px;
   }
-  .card.completed{opacity:0.72;}
-
-  .card-main{flex:1; min-width:0;}
   .loc{
     font-weight:700;
     font-size:15px;
     overflow-wrap:anywhere;
   }
-  .meta{
-    font-size:12px;
-    color:var(--ink-soft);
-    margin-top:2px;
-  }
-  .waiting-row{
-    display:flex;
+  .tag{
+    display:inline-flex;
     align-items:center;
-    gap:6px;
+    gap:4px;
+    font-size:12px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+  .tag-luggage{background:var(--amber-soft); color:#8a5a10;}
+  .tag-people{background:var(--green-soft); color:var(--green);}
+
+  .card-main{flex:1; min-width:0;}
+  .estimate{
+    font-size:12px;
+    font-weight:700;
+    color:var(--amber);
     margin-top:4px;
   }
-  .dot{
-    width:8px; height:8px; border-radius:50%;
-    background:var(--amber);
-    animation:pulse 1.4s ease-in-out infinite;
-    flex-shrink:0;
-  }
-  @media (prefers-reduced-motion: reduce){ .dot{animation:none;} }
-  @keyframes pulse{
-    0%,100%{opacity:1;}
-    50%{opacity:0.35;}
-  }
-  .elapsed{
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:17px;
-    font-variant-numeric:tabular-nums;
-    color:var(--amber);
-  }
-  .duration{
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:17px;
-    font-variant-numeric:tabular-nums;
-    color:var(--green);
-  }
+  .estimate.pending{color:var(--ink-soft); font-weight:500;}
+  .estimate.overdue{color:var(--green);}
 
-  .btn-complete{
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:14px;
-    text-transform:uppercase;
-    letter-spacing:0.03em;
-    background:var(--green);
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    padding:14px 16px;
-    cursor:pointer;
-    flex-shrink:0;
-  }
-  .btn-complete:active{transform:scale(0.96);}
-
-  .icon-btn{
-    background:none;
-    border:none;
-    color:var(--ink-soft);
-    font-size:18px;
-    padding:6px 8px;
-    cursor:pointer;
-    flex-shrink:0;
-  }
-  .undo-btn{
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:12px;
-    background:var(--green-soft);
-    color:var(--green);
-    border:none;
-    border-radius:8px;
-    padding:8px 10px;
-    cursor:pointer;
-    flex-shrink:0;
-  }
-
-  .toggle-btn{
-    width:100%;
-    text-align:left;
-    background:none;
-    border:none;
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:13px;
-    text-transform:uppercase;
-    letter-spacing:0.06em;
-    color:var(--ink-soft);
-    padding:10px 4px;
-    cursor:pointer;
-    border-top:2px solid var(--line);
-    margin-top:10px;
-  }
-
-  footer{
-    display:flex;
-    gap:10px;
-    padding:20px 18px 6px;
-  }
-  footer button{
-    flex:1;
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:13px;
-    padding:12px;
-    border-radius:10px;
-    border:2px solid var(--line);
-    background:var(--card);
-    color:var(--ink);
-    cursor:pointer;
-  }
-  footer .clear-btn{color:var(--red); border-color:var(--red);}
   .sync-status{
     text-align:center;
     font-size:11px;
@@ -340,136 +195,48 @@
   }
   button:focus-visible, input:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
 
-  /* Devices with a real mouse/trackpad get hover feedback;
-     touchscreens skip this so taps don't get stuck in a hover state. */
   @media (hover:hover) and (pointer:fine){
-    .add-row button:hover, .btn-complete:hover, footer button:hover{ opacity:0.88; }
+    .add-row button:hover{ opacity:0.88; }
     .type-chip:hover{ border-color:var(--amber); }
-    .icon-btn:hover, .undo-btn:hover{ opacity:0.75; }
-    .card:hover{ border-color:var(--amber); }
-  }
-
-  .lock-screen{
-    position:fixed;
-    inset:0;
-    z-index:1000;
-    background:var(--bg);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-  }
-  .lock-card{
-    background:var(--card);
-    border:2px solid var(--line);
-    border-radius:var(--radius);
-    padding:28px 24px;
-    max-width:320px;
-    width:100%;
-    text-align:center;
-  }
-  .lock-card h1{ margin-bottom:4px; }
-  .lock-card .subtitle{ margin-bottom:20px; }
-  .lock-card input{
-    width:100%;
-    font-size:16px;
-    padding:14px;
-    border-radius:var(--radius);
-    border:2px solid var(--line);
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Inter',sans-serif;
-    font-weight:500;
-    text-align:center;
-    margin-bottom:12px;
-  }
-  .lock-card input:focus{outline:3px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
-  .lock-card button{
-    width:100%;
-    font-family:'Big Shoulders',sans-serif;
-    font-weight:800;
-    font-size:16px;
-    text-transform:uppercase;
-    letter-spacing:0.03em;
-    background:var(--ink);
-    color:#fff;
-    border:none;
-    border-radius:var(--radius);
-    padding:14px;
-    cursor:pointer;
-  }
-  .lock-card button:active{transform:scale(0.97);}
-  .lock-error{
-    color:var(--red);
-    font-size:13px;
-    font-weight:600;
-    margin-top:12px;
-    display:none;
   }
 </style>
 </head>
 <body>
 
-<div class="lock-screen" id="lock-screen">
-  <form class="lock-card" id="lock-form">
-    <h1>Cart Dispatch</h1>
-    <div class="subtitle">Enter password to continue</div>
-    <input type="password" id="lock-password" placeholder="Password" autocomplete="current-password" required>
-    <button type="submit">Unlock</button>
-    <div class="lock-error" id="lock-error">Incorrect password</div>
-  </form>
-</div>
-
-<div id="app" style="display:none;">
-
 <header>
-  <h1>Cart Dispatch</h1>
-  <div class="subtitle">Visiting Day</div>
-  <div class="stats">
-    <div class="stat"><span class="num" id="stat-active">0</span><span class="label">Waiting</span></div>
-    <div class="stat"><span class="num" id="stat-completed">0</span><span class="label">Completed</span></div>
-    <div class="stat"><span class="num" id="stat-avg">–</span><span class="label">Avg time</span></div>
-  </div>
+  <h1>Request a Cart</h1>
+  <div class="subtitle">Visiting Day — Staff</div>
+  <div class="waiting-count"><strong id="waiting-num">0</strong> carts currently waiting</div>
 </header>
 
 <div class="error-banner" id="error-banner" style="display:none;"></div>
+<div class="notice-banner" id="notice-banner" style="display:none;"></div>
 
 <form class="add-bar" id="add-form">
-  <div class="add-row">
-    <input id="location-input" type="text" placeholder="Pickup location (e.g. Cabin 12)" autocomplete="off" required>
-    <button type="submit">Log</button>
-  </div>
   <div class="type-row" id="type-row">
-    <button type="button" class="type-chip" data-type="All">🗂️ All</button>
     <button type="button" class="type-chip" data-type="Luggage">🧳 Luggage</button>
     <button type="button" class="type-chip" data-type="People">🧑‍🤝‍🧑 People</button>
   </div>
-  <div class="preview-eta pending" id="preview-eta">⏱ Gathering data…</div>
+  <div class="add-row">
+    <input id="location-input" type="text" placeholder="Location (e.g. Cabin 12)" autocomplete="off" required>
+    <button type="submit">Request</button>
+  </div>
 </form>
 
 <main>
-  <div class="section-label" id="section-label">Waiting for pickup</div>
+  <div class="section-label">Currently on the list</div>
   <div id="active-list"></div>
-
-  <button class="toggle-btn" id="toggle-completed">Completed (0) ▾</button>
-  <div id="completed-list" style="display:none;"></div>
 </main>
 
-<footer>
-  <button id="export-btn">Export CSV</button>
-  <button class="clear-btn" id="clear-btn">Clear all</button>
-</footer>
 <div class="sync-status" id="sync-status">Connecting…</div>
-
-</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
-  getDatabase, ref, push, set, update, remove, onValue
+  getDatabase, ref, push, set, onValue
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
-// ====== YOUR FIREBASE CONFIG ======
+// ====== SAME FIREBASE PROJECT AS index.html — keep these identical ======
 const firebaseConfig = {
   apiKey: "AIzaSyCiGLztuyGjXunjPIwurGxc5A8ESC-Xhc0",
   authDomain: "golf-cart-dispatch.firebaseapp.com",
@@ -479,30 +246,7 @@ const firebaseConfig = {
   messagingSenderId: "512571560244",
   appId: "1:512571560244:web:5b80852b750f253b3bd561"
 };
-// ===================================
-
-const LOCK_PASSWORD = 'fwf267';
-const lockScreen = document.getElementById('lock-screen');
-const appEl = document.getElementById('app');
-function unlock(){
-  lockScreen.style.display = 'none';
-  appEl.style.display = '';
-}
-if(localStorage.getItem('cd_unlocked') === 'yes'){
-  unlock();
-}
-document.getElementById('lock-form').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const input = document.getElementById('lock-password');
-  if(input.value === LOCK_PASSWORD){
-    localStorage.setItem('cd_unlocked', 'yes');
-    unlock();
-  }else{
-    document.getElementById('lock-error').style.display = 'block';
-    input.value = '';
-    input.focus();
-  }
-});
+// ==========================================================================
 
 let app, db;
 function showError(msg){
@@ -512,43 +256,37 @@ function showError(msg){
   clearTimeout(showError._t);
   showError._t = setTimeout(()=>{ el.style.display='none'; }, 8000);
 }
+function showNotice(msg){
+  const el = document.getElementById('notice-banner');
+  el.textContent = 'ℹ️ ' + msg;
+  el.style.display = 'block';
+  clearTimeout(showNotice._t);
+  showNotice._t = setTimeout(()=>{ el.style.display='none'; }, 6000);
+}
 try{
   app = initializeApp(firebaseConfig);
   db = getDatabase(app);
 }catch(err){
-  showError('Firebase failed to start: ' + err.message + ' — double-check your firebaseConfig values.');
+  showError('Firebase failed to start: ' + err.message);
 }
 
-const TYPE_ICONS = {All:'🗂️', Luggage:'🧳', People:'🧑\u200d🤝\u200d🧑', Other:'✳️'};
+const TYPE_ICONS = {Luggage:'🧳', People:'🧑\u200d🤝\u200d🧑'};
 
 let requests = [];
-let viewFilter = 'People';
 let logType = 'People';
 
 function setActiveChip(){
   document.querySelectorAll('.type-chip').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.type === viewFilter);
+    btn.classList.toggle('active', btn.dataset.type === logType);
   });
 }
 document.querySelectorAll('.type-chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    viewFilter = btn.dataset.type;
-    if(viewFilter !== 'All') logType = viewFilter;
+    logType = btn.dataset.type;
     setActiveChip();
-    render();
   });
 });
 setActiveChip();
-
-function fmtClock(ts){
-  return new Date(ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit'});
-}
-function fmtDuration(ms){
-  const totalSec = Math.max(0, Math.floor(ms/1000));
-  const m = Math.floor(totalSec/60);
-  const s = totalSec%60;
-  return m + 'm ' + String(s).padStart(2,'0') + 's';
-}
 
 function escapeHtml(str){
   const d = document.createElement('div');
@@ -556,15 +294,30 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+// Treats "B5", "B5A", and "B05A" as the same cabin — strips leading zeros
+// and a trailing A/B sub-cabin letter so near-identical spellings dedupe.
+function normalizeLocation(str){
+  const s = str.trim().toUpperCase().replace(/\s+/g, ' ');
+  const m = s.match(/^([A-Z]+)0*(\d+)[A-Z]?$/);
+  return m ? m[1] + m[2] : s;
+}
+
 function tagHtml(type){
-  const t = type || 'Other';
+  const t = type || 'People';
   const cls = 'tag-' + t.toLowerCase();
-  return `<span class="tag ${cls}">${TYPE_ICONS[t] || '✳️'} ${t}</span>`;
+  return `<span class="tag ${cls}">${TYPE_ICONS[t] || ''} ${t}</span>`;
+}
+
+function fmtDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const m = Math.floor(totalSec/60);
+  const s = totalSec%60;
+  return m + 'm ' + String(s).padStart(2,'0') + 's';
 }
 
 function recentAvgForType(type){
   const matches = requests
-    .filter(r=>r.completedAt && (type===null || (r.type||'Other')===type))
+    .filter(r=>r.completedAt && (r.type||'Other')===type)
     .sort((a,b)=>b.completedAt-a.completedAt)
     .slice(0,5);
   if(!matches.length) return null;
@@ -593,163 +346,73 @@ function estimateHtml(r){
   return `<div class="${cls}" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
 }
 
-function updatePreviewEta(){
-  const el = document.getElementById('preview-eta');
-  const avg = avgWaitForType(logType);
-  const icon = TYPE_ICONS[logType] || '';
-  if(avg === null){
-    el.textContent = `${icon} No ${logType} data yet — ETA appears after a few completions`;
-    el.classList.add('pending');
-  }else{
-    el.textContent = `${icon} Tell them: ~${fmtDuration(avg)} wait (${logType})`;
-    el.classList.remove('pending');
-  }
-}
-
 function render(){
-  const active = requests.filter(r=>!r.completedAt && (viewFilter==='All' || (r.type||'Other')===viewFilter)).sort((a,b)=>a.requestedAt-b.requestedAt);
-  const completed = requests.filter(r=>r.completedAt && (viewFilter==='All' || (r.type||'Other')===viewFilter)).sort((a,b)=>b.completedAt-a.completedAt);
-
-  document.getElementById('section-label').textContent = `${TYPE_ICONS[viewFilter]||''} Waiting for pickup — ${viewFilter}`;
+  const active = requests.filter(r=>!r.completedAt).sort((a,b)=>a.requestedAt-b.requestedAt);
+  document.getElementById('waiting-num').textContent = active.length;
 
   const activeList = document.getElementById('active-list');
   activeList.innerHTML = active.length ? active.map(r=>`
     <div class="card" data-id="${r.id}">
       <div class="card-main">
-        <div class="loc">${escapeHtml(r.location)}</div>
+        <span class="loc">${escapeHtml(r.location)}</span>
         ${tagHtml(r.type)}
-        <div class="meta">Requested ${fmtClock(r.requestedAt)}</div>
         ${estimateHtml(r)}
-        <div class="waiting-row">
-          <span class="dot"></span>
-          <span class="elapsed" id="elapsed-${r.id}">${fmtDuration(Date.now()-r.requestedAt)}</span>
-        </div>
       </div>
-      <button class="btn-complete" onclick="markComplete('${r.id}')">Done</button>
-      <button class="icon-btn" title="Delete" onclick="deleteRequest('${r.id}')">✕</button>
     </div>
-  `).join('') : '<div class="empty">No active requests. Add one above.</div>';
-
-  const completedList = document.getElementById('completed-list');
-  completedList.innerHTML = completed.length ? completed.map(r=>`
-    <div class="card completed" data-id="${r.id}">
-      <div class="card-main">
-        <div class="loc">${escapeHtml(r.location)}</div>
-        ${tagHtml(r.type)}
-        <div class="meta">Req ${fmtClock(r.requestedAt)} → Done ${fmtClock(r.completedAt)}</div>
-        <div class="duration">${fmtDuration(r.completedAt-r.requestedAt)}</div>
-      </div>
-      <button class="undo-btn" onclick="undoComplete('${r.id}')">Undo</button>
-      <button class="icon-btn" title="Delete" onclick="deleteRequest('${r.id}')">✕</button>
-    </div>
-  `).join('') : '<div class="empty">Nothing completed yet.</div>';
-
-  document.getElementById('toggle-completed').textContent = `Completed (${completed.length}) ${completedList.style.display==='none' ? '▾' : '▴'}`;
-
-  document.getElementById('stat-active').textContent = active.length;
-  document.getElementById('stat-completed').textContent = completed.length;
-  const recentAvg = recentAvgForType(viewFilter==='All' ? null : viewFilter);
-  document.getElementById('stat-avg').textContent = recentAvg !== null ? fmtDuration(recentAvg) : '–';
-
-  updatePreviewEta();
+  `).join('') : '<div class="empty">No pending requests right now.</div>';
 }
 
-function tickElapsed(){
+function tickEstimates(){
   requests.filter(r=>!r.completedAt).forEach(r=>{
-    const el = document.getElementById('elapsed-'+r.id);
-    if(el) el.textContent = fmtDuration(Date.now()-r.requestedAt);
-
     const estEl = document.getElementById('estimate-'+r.id);
-    if(estEl){
-      const avg = avgWaitForType(r.type||'Other');
-      if(avg === null){
-        estEl.textContent = '⏱ Est. wait: gathering data';
-        estEl.classList.remove('overdue');
-        estEl.classList.add('pending');
-      }else{
-        const remaining = avg - (Date.now()-r.requestedAt);
-        estEl.textContent = formatEstimate(remaining);
-        estEl.classList.remove('pending');
-        estEl.classList.toggle('overdue', remaining <= 0);
-      }
+    if(!estEl) return;
+    const avg = avgWaitForType(r.type||'Other');
+    if(avg === null){
+      estEl.textContent = '⏱ Est. wait: gathering data';
+      estEl.classList.remove('overdue');
+      estEl.classList.add('pending');
+    }else{
+      const remaining = avg - (Date.now()-r.requestedAt);
+      estEl.textContent = formatEstimate(remaining);
+      estEl.classList.remove('pending');
+      estEl.classList.toggle('overdue', remaining <= 0);
     }
   });
 }
 
-// ---- Firebase live sync ----
 onValue(ref(db, 'requests'), snap=>{
   const val = snap.val();
   requests = val ? Object.keys(val).map(id=>({id, ...val[id]})) : [];
   render();
-}, err=>showError('Lost connection to requests: '+err.message));
+}, err=>showError('Lost connection: '+err.message));
 
 onValue(ref(db, '.info/connected'), snap=>{
   const connected = snap.val();
   document.getElementById('sync-status').textContent = connected
-    ? '🟢 Synced live across devices'
+    ? '🟢 Connected'
     : '🔴 Offline — reconnecting…';
 });
-
-// ---- Mutations ----
-function markComplete(id){
-  update(ref(db,'requests/'+id), {completedAt: Date.now()}).catch(err=>showError('Could not save: '+err.message));
-}
-function undoComplete(id){
-  update(ref(db,'requests/'+id), {completedAt: null}).catch(err=>showError('Could not save: '+err.message));
-}
-function deleteRequest(id){
-  remove(ref(db,'requests/'+id)).catch(err=>showError('Could not delete: '+err.message));
-}
-window.markComplete = markComplete;
-window.undoComplete = undoComplete;
-window.deleteRequest = deleteRequest;
 
 document.getElementById('add-form').addEventListener('submit', (e)=>{
   e.preventDefault();
   const input = document.getElementById('location-input');
   const loc = input.value.trim();
   if(!loc) return;
-  if(!db){ showError('Firebase never connected — check your config.'); return; }
+  if(!db){ showError('Not connected — try again in a moment.'); return; }
+
+  const dup = requests.find(r=>!r.completedAt && normalizeLocation(r.location)===normalizeLocation(loc));
+  if(dup){
+    showNotice(`"${loc}" is already on the list — no need to request again.`);
+    return;
+  }
+
   const newRef = push(ref(db,'requests'));
   set(newRef, {location:loc, type:logType, requestedAt:Date.now(), completedAt:null})
     .then(()=>{ input.value=''; input.focus(); })
-    .catch(err=>showError('Could not add request: '+err.message));
+    .catch(err=>showError('Could not send request: '+err.message));
 });
 
-document.getElementById('toggle-completed').addEventListener('click', ()=>{
-  const el = document.getElementById('completed-list');
-  el.style.display = el.style.display==='none' ? 'block' : 'none';
-  render();
-});
-
-document.getElementById('clear-btn').addEventListener('click', ()=>{
-  if(!confirm('Clear all requests for everyone, on every device? This cannot be undone.')) return;
-  remove(ref(db,'requests')).catch(err=>showError('Could not clear: '+err.message));
-});
-
-document.getElementById('export-btn').addEventListener('click', ()=>{
-  const rows = [['Location','Type','Requested','Completed','Duration']];
-  requests.slice().sort((a,b)=>a.requestedAt-b.requestedAt).forEach(r=>{
-    rows.push([
-      r.location,
-      r.type || 'Other',
-      new Date(r.requestedAt).toLocaleString(),
-      r.completedAt ? new Date(r.completedAt).toLocaleString() : '',
-      r.completedAt ? fmtDuration(r.completedAt-r.requestedAt) : ''
-    ]);
-  });
-  const csv = rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'cart-dispatch-log.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-updatePreviewEta();
-setInterval(tickElapsed, 1000);
+setInterval(tickEstimates, 1000);
 </script>
 </body>
 </html>
