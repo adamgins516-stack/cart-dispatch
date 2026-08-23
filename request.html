@@ -294,6 +294,14 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+// Treats "B5", "B5A", and "B05A" as the same cabin — strips leading zeros
+// and a trailing A/B sub-cabin letter so near-identical spellings dedupe.
+function normalizeLocation(str){
+  const s = str.trim().toUpperCase().replace(/\s+/g, ' ');
+  const m = s.match(/^([A-Z]+)0*(\d+)[A-Z]?$/);
+  return m ? m[1] + m[2] : s;
+}
+
 function tagHtml(type){
   const t = type || 'People';
   const cls = 'tag-' + t.toLowerCase();
@@ -316,8 +324,8 @@ function recentAvgForType(type){
   return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
 }
 
-// Done = cart dispatched, not arrived — add average travel time (3-7 min range) to get a real ETA
-const TRAVEL_MS = 5 * 60 * 1000;
+// Done = cart dispatched, not arrived — add average travel time to get a real ETA
+const TRAVEL_MS = 10 * 60 * 1000;
 function avgWaitForType(type){
   const avg = recentAvgForType(type);
   return avg === null ? null : avg + TRAVEL_MS;
@@ -392,7 +400,7 @@ document.getElementById('add-form').addEventListener('submit', (e)=>{
   if(!loc) return;
   if(!db){ showError('Not connected — try again in a moment.'); return; }
 
-  const dup = requests.find(r=>!r.completedAt && r.location.trim().toLowerCase()===loc.toLowerCase());
+  const dup = requests.find(r=>!r.completedAt && normalizeLocation(r.location)===normalizeLocation(loc));
   if(dup){
     showNotice(`"${loc}" is already on the list — no need to request again.`);
     return;

@@ -348,9 +348,79 @@
     .icon-btn:hover, .undo-btn:hover{ opacity:0.75; }
     .card:hover{ border-color:var(--amber); }
   }
+
+  .lock-screen{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .lock-card{
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px 24px;
+    max-width:320px;
+    width:100%;
+    text-align:center;
+  }
+  .lock-card h1{ margin-bottom:4px; }
+  .lock-card .subtitle{ margin-bottom:20px; }
+  .lock-card input{
+    width:100%;
+    font-size:16px;
+    padding:14px;
+    border-radius:var(--radius);
+    border:2px solid var(--line);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    text-align:center;
+    margin-bottom:12px;
+  }
+  .lock-card input:focus{outline:3px solid var(--amber); outline-offset:1px; border-color:var(--amber);}
+  .lock-card button{
+    width:100%;
+    font-family:'Big Shoulders',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    padding:14px;
+    cursor:pointer;
+  }
+  .lock-card button:active{transform:scale(0.97);}
+  .lock-error{
+    color:var(--red);
+    font-size:13px;
+    font-weight:600;
+    margin-top:12px;
+    display:none;
+  }
 </style>
 </head>
 <body>
+
+<div class="lock-screen" id="lock-screen">
+  <form class="lock-card" id="lock-form">
+    <h1>Cart Dispatch</h1>
+    <div class="subtitle">Enter password to continue</div>
+    <input type="password" id="lock-password" placeholder="Password" autocomplete="current-password" required>
+    <button type="submit">Unlock</button>
+    <div class="lock-error" id="lock-error">Incorrect password</div>
+  </form>
+</div>
+
+<div id="app" style="display:none;">
 
 <header>
   <h1>Cart Dispatch</h1>
@@ -391,6 +461,8 @@
 </footer>
 <div class="sync-status" id="sync-status">Connecting…</div>
 
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
@@ -408,6 +480,29 @@ const firebaseConfig = {
   appId: "1:512571560244:web:5b80852b750f253b3bd561"
 };
 // ===================================
+
+const LOCK_PASSWORD = 'fwf267';
+const lockScreen = document.getElementById('lock-screen');
+const appEl = document.getElementById('app');
+function unlock(){
+  lockScreen.style.display = 'none';
+  appEl.style.display = '';
+}
+if(localStorage.getItem('cd_unlocked') === 'yes'){
+  unlock();
+}
+document.getElementById('lock-form').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const input = document.getElementById('lock-password');
+  if(input.value === LOCK_PASSWORD){
+    localStorage.setItem('cd_unlocked', 'yes');
+    unlock();
+  }else{
+    document.getElementById('lock-error').style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+});
 
 let app, db;
 function showError(msg){
@@ -476,8 +571,8 @@ function recentAvgForType(type){
   return matches.reduce((s,r)=>s+(r.completedAt-r.requestedAt),0)/matches.length;
 }
 
-// Done = cart dispatched, not arrived — add average travel time (3-7 min range) to get a real ETA
-const TRAVEL_MS = 5 * 60 * 1000;
+// Done = cart dispatched, not arrived — add average travel time to get a real ETA
+const TRAVEL_MS = 10 * 60 * 1000;
 function avgWaitForType(type){
   const avg = recentAvgForType(type);
   return avg === null ? null : avg + TRAVEL_MS;
