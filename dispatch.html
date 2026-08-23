@@ -621,16 +621,20 @@ function peopleQueueDelayMs(){
     .reduce((sum,r)=>sum + Math.max(0, peopleAvg - (Date.now()-r.requestedAt)), 0);
 }
 
-// Past the estimate, keep ticking down (never freeze, never jump back up) but ease
-// toward zero without ever touching it, so the countdown always keeps moving.
+// Ticks in true real time always. Once the estimate runs out, top the countdown
+// back up by TRAVEL_MS instead of freezing or fake-slowing it — still real seconds,
+// just occasionally topped up rather than ever sitting at (or crossing) zero.
 function clampRemaining(ms){
-  if(ms > TRAVEL_MS) return ms;
-  const overdue = TRAVEL_MS - ms;
-  return (TRAVEL_MS * TRAVEL_MS) / (TRAVEL_MS + overdue);
+  if(ms > 0) return ms;
+  const overdue = -ms;
+  return TRAVEL_MS - (overdue % TRAVEL_MS);
 }
 
 function formatEstimate(remainingMs){
-  return `⏱ Est. wait ~${fmtDuration(remainingMs)}`;
+  const totalSec = Math.max(1, Math.ceil(remainingMs/1000));
+  const m = Math.floor(totalSec/60);
+  const s = totalSec%60;
+  return `⏱ Est. wait ~${m}m ${String(s).padStart(2,'0')}s`;
 }
 
 function estimateHtml(r){
