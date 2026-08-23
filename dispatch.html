@@ -621,9 +621,12 @@ function peopleQueueDelayMs(){
     .reduce((sum,r)=>sum + Math.max(0, peopleAvg - (Date.now()-r.requestedAt)), 0);
 }
 
-// Wait times keep running long — never let the countdown bottom out or claim arrival
+// Past the estimate, keep ticking down (never freeze, never jump back up) but ease
+// toward zero without ever touching it, so the countdown always keeps moving.
 function clampRemaining(ms){
-  return Math.max(ms, TRAVEL_MS);
+  if(ms > TRAVEL_MS) return ms;
+  const overdue = TRAVEL_MS - ms;
+  return (TRAVEL_MS * TRAVEL_MS) / (TRAVEL_MS + overdue);
 }
 
 function formatEstimate(remainingMs){
