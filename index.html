@@ -465,13 +465,35 @@ function peopleQueueDelayMs(){
     .reduce((sum,r)=>sum + Math.max(0, peopleAvg - (Date.now()-r.requestedAt)), 0);
 }
 
-// Ticks in true real time always. Once the estimate runs out, top the countdown
-// back up by TRAVEL_MS instead of freezing or fake-slowing it — still real seconds,
-// just occasionally topped up rather than ever sitting at (or crossing) zero.
-function clampRemaining(ms){
-  if(ms > 0) return ms;
-  const overdue = -ms;
-  return TRAVEL_MS - (overdue % TRAVEL_MS);
+function typeBaseline(type){
+  const avg = avgWaitForType(type);
+  if(avg === null) return null;
+  return type === 'Luggage' ? avg + peopleQueueDelayMs() : avg;
+}
+
+// Ticks in true real time always. Once the *front* of a type's line would run
+// its countdown out, the whole type tops back up by TRAVEL_MS together — never
+// per-request — so everyone in that line stays in the same order they're
+// waiting in. Topping up per-request individually let someone who'd been
+// waiting less time show a shorter ETA than someone ahead of them, right at
+// the moment the front person's countdown wrapped — this keeps that from
+// happening: front of the line always has the smallest number.
+function topUpMsForType(type, baseline){
+  const elapsed = requests
+    .filter(r=>!r.completedAt && (r.type||'Other')===type)
+    .map(r=>Date.now()-r.requestedAt);
+  if(!elapsed.length) return 0;
+  const overdue = Math.max(...elapsed) - baseline;
+  if(overdue < 0) return 0;
+  return TRAVEL_MS * (Math.floor(overdue/TRAVEL_MS) + 1);
+}
+
+function remainingForRequest(r){
+  const type = r.type||'Other';
+  const baseline = typeBaseline(type);
+  if(baseline === null) return null;
+  const topUp = topUpMsForType(type, baseline);
+  return baseline + topUp - (Date.now()-r.requestedAt);
 }
 
 function formatEstimate(remainingMs){
@@ -482,13 +504,10 @@ function formatEstimate(remainingMs){
 }
 
 function estimateHtml(r){
-  const type = r.type||'Other';
-  const avg = avgWaitForType(type);
-  if(avg === null){
+  const remaining = remainingForRequest(r);
+  if(remaining === null){
     return `<div class="estimate pending" id="estimate-${r.id}">⏱ Est. wait: gathering data</div>`;
   }
-  const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
-  const remaining = clampRemaining(avg + extra - (Date.now()-r.requestedAt));
   return `<div class="estimate" id="estimate-${r.id}">${formatEstimate(remaining)}</div>`;
 }
 
@@ -523,14 +542,11 @@ function tickEstimates(){
 
     const estEl = document.getElementById('estimate-'+r.id);
     if(!estEl) return;
-    const type = r.type||'Other';
-    const avg = avgWaitForType(type);
-    if(avg === null){
+    const remaining = remainingForRequest(r);
+    if(remaining === null){
       estEl.textContent = '⏱ Est. wait: gathering data';
       estEl.classList.add('pending');
     }else{
-      const extra = type === 'Luggage' ? peopleQueueDelayMs() : 0;
-      const remaining = clampRemaining(avg + extra - (Date.now()-r.requestedAt));
       estEl.textContent = formatEstimate(remaining);
       estEl.classList.remove('pending');
     }
